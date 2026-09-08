@@ -291,7 +291,7 @@
 			if(owner.is_nearsighted_from(QUIRK_TRAIT))
 				return conditional_tooltip("Субъект страдает от постоянной близорукости.", "Не поддаётся лечению в обычных условиях. Очки с диоптриями смягчат эффект.", add_tooltips)
 			if(owner.is_nearsighted_from(TRAIT_RIGHT_EYE_SCAR) || owner.is_nearsighted_from(TRAIT_LEFT_EYE_SCAR))
-				return conditional_tooltip("Субъект страдает близорукостью из-за серьёзных рубцов на глазах.", "Требуется хирургическая замена глаз, иначе состояние необратимо.", add_tooltips)
+				return conditional_tooltip("Субъект страдает близорукостью из-за серьёзных рубцов на глазе.", "Требуется хирургическая замена глаз, иначе состояние необратимо.", add_tooltips)
 			if(owner.is_nearsighted_from(GENETIC_MUTATION))
 				return conditional_tooltip("Субъект страдает генетической близорукостью.", "Используйте медикаменты, такие как [/datum/reagent/medicine/mutadone::name]. Очки с диоптриями смягчат эффект.", add_tooltips)
 			if(owner.is_nearsighted_from(EYE_DAMAGE))
@@ -319,7 +319,7 @@
 	if(my_head.owner && !(my_head.owner.obscured_slots & HIDEEYES))
 		overlays += get_emissive_overlays(eye_left, eye_right, my_head)
 
-	if(my_head.head_flags & HEAD_EYECOLOR)
+	if((my_head.head_flags & HEAD_EYECOLOR) && my_head.is_husked != HUSKED_ZOMBIE)
 		eye_right.color = my_head.owner?.get_right_eye_color() || eye_color_right
 		eye_left.color = my_head.owner?.get_left_eye_color() || eye_color_left
 		var/list/eyelids = get_eyelid_overlays(eye_left, eye_right, my_head)
@@ -525,7 +525,9 @@
 		. += wait_time
 		if (anim_times && !sync_blinking)
 			// Make sure that we're somewhat in sync with the other eye
-			animate(time = anim_times[i + 1] - wait_time)
+			var/offset_time = anim_times[i + 1] - wait_time
+			if(offset_time) // For some reason having time == 0 in this case breaks animate
+				animate(time = offset_time)
 		animate(alpha = 255, time = 0)
 		animate(time = BLINK_DURATION)
 		if (i != cycles)

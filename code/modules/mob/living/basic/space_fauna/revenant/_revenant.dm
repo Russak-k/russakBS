@@ -32,7 +32,7 @@
 	response_harm_continuous = "пробивает насквозь"
 	response_harm_simple = "пробивает сквозь"
 	unsuitable_atmos_damage = 0
-	damage_coeff = list(BRUTE = 1, BURN = 1, TOX = 0, STAMINA = 0, OXY = 0) //I don't know how you'd apply those, but revenants no-sell them anyway.
+	physiology = list(TOX = 0, OXY = 0, STAMINA = 0) //I don't know how you'd apply those, but revenants no-sell them anyway.
 	habitable_atmos = null
 	minimum_survivable_temperature = 0
 	maximum_survivable_temperature = INFINITY
@@ -102,7 +102,15 @@
 /mob/living/basic/revenant/Initialize(mapload)
 	. = ..()
 	AddElement(/datum/element/simple_flying)
-	add_traits(list(TRAIT_COMBAT_MODE_LOCK, TRAIT_SPACEWALK, TRAIT_SIXTHSENSE, TRAIT_FREE_HYPERSPACE_MOVEMENT, TRAIT_SEE_BLESSED_TILES, TRAIT_IGNORE_ELEVATION), INNATE_TRAIT)
+	add_traits(list(
+		TRAIT_COMBAT_MODE_LOCK,
+		TRAIT_SPACEWALK,
+		TRAIT_SIXTHSENSE,
+		TRAIT_FREE_HYPERSPACE_MOVEMENT,
+		TRAIT_SEE_BLESSED_TILES,
+		TRAIT_IGNORE_ELEVATION,
+		TRAIT_GHOSTLY_MOB,
+	), INNATE_TRAIT)
 
 	grant_actions_by_list(abilities)
 
@@ -180,7 +188,7 @@
 	. += "Неиспользованная эссенция: [essence_excess] УЭ"
 	. += "Идеальных душ похищено: [perfectsouls]"
 
-/mob/living/basic/revenant/update_health_hud()
+/mob/living/basic/revenant/update_health_hud(healthpercent)
 	if(isnull(hud_used))
 		return
 
@@ -257,19 +265,34 @@
 	orbitsize -= (orbitsize / ICON_SIZE_ALL) * (ICON_SIZE_ALL * 0.25)
 	orbit(target, orbitsize)
 
-/mob/living/basic/revenant/adjust_health(amount, updating_health = TRUE, forced = FALSE)
-	if(!forced && !HAS_TRAIT(src, TRAIT_REVENANT_REVEALED))
-		return 0
+// Prevents damage from adjust_x_loss while in a host, because that damage would be nullified by the next [proc/sync_health] call. Adjust host blood volume instead.
+/mob/living/basic/revenant/can_adjust_brute_loss(amount, forced, required_bodytype)
+	if(!forced && amount > 0 && !HAS_TRAIT(src, TRAIT_REVENANT_REVEALED))
+		return FALSE
+	return ..()
 
-	. = amount
+/mob/living/basic/revenant/can_adjust_fire_loss(amount, forced, required_bodytype)
+	if(!forced && amount > 0 && !HAS_TRAIT(src, TRAIT_REVENANT_REVEALED))
+		return FALSE
+	return ..()
 
-	essence = max(0, essence - amount)
-	if(updating_health)
-		update_health_hud()
+/mob/living/basic/revenant/can_adjust_tox_loss(amount, forced, required_bodytype)
+	if(!forced && amount > 0 && !HAS_TRAIT(src, TRAIT_REVENANT_REVEALED))
+		return FALSE
+	return ..()
+
+/mob/living/basic/revenant/can_adjust_oxy_loss(amount, forced, required_bodytype)
+	if(!forced && amount > 0 && !HAS_TRAIT(src, TRAIT_REVENANT_REVEALED))
+		return FALSE
+	return ..()
+
+/mob/living/basic/revenant/on_damage_loss_changed(amount, updating_health, forced, damage_type)
+	bruteloss = 0 //reset brute loss, detract amount of damage from essence instead..
+	//negative amount means that damage has been healed, positive means damage has been received
+	essence = clamp(essence - amount, 0, max_essence)
+	. = ..()
 	if(essence == 0)
 		death()
-
-	return .
 
 /mob/living/basic/revenant/orbit(atom/target)
 	setDir(SOUTH) // reset dir so the right directional sprites show up
@@ -410,7 +433,7 @@
 		apply_status_effect(/datum/status_effect/incapacitating/paralyzed/revenant, 2 SECONDS)
 		return FALSE
 
-	if(locate(/obj/effect/blessing) in step_turf)
+	if(HAS_TRAIT(step_turf, TRAIT_TURF_BLESSED))
 		to_chat(src, span_warning("Святая энергия преграждают вам путь!"))
 		return FALSE
 
