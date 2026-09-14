@@ -127,6 +127,10 @@
 	name = "Зимнее пальто"
 	item_path = /obj/item/clothing/suit/hooded/wintercoat
 
+/datum/loadout_item/suits/flaneljacket
+	name = "чёрная фланелевая рубашка"
+	item_path = /obj/item/clothing/suit/toggle/jacket/flanel_black
+
 // MARK: Tier 1
 /datum/loadout_item/suits/soundhand_white_jacket
 	name = "Саундхэнд (Белая)"
