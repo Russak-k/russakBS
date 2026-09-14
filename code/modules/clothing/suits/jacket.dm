@@ -212,3 +212,12 @@
 /obj/item/clothing/suit/jacket/letterman_nanotrasen/Initialize(mapload)
 	. = ..()
 	allowed += GLOB.improvised_firearm_allowed
+
+/obj/item/clothing/suit/toggle/jacket/flanel_black
+	name = "black flanel jacket"
+	desc = "A simple black flannel shirt. Warm, comfortable, and slightly worn.."
+	icon_state = "flanel_black"
+	body_parts_covered = CHEST|GROIN
+
+
+
